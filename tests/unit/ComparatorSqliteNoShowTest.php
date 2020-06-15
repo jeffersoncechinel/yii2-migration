@@ -351,6 +351,41 @@ final class ComparatorSqliteNoShowTest extends ComparatorNonSqliteTest
      * @test
      * @throws NotSupportedException
      */
+    public function shouldAddDiffColumnsAndDiffRefColumnsForeignKey(): void
+    {
+        $this->expectException(NotSupportedException::class);
+
+        $foreignKey1 = $this->getForeignKey('fk');
+        $foreignKey1->setColumns(['a']);
+        $foreignKey2 = $this->getForeignKey('fk2');
+        $foreignKey2->setReferredColumns(['a']);
+        $this->newStructure->method('getForeignKeys')->willReturn(
+            [
+                'fk' => $foreignKey1,
+                'fk2' => $foreignKey2
+            ]
+        );
+        $this->newStructure->method('getForeignKey')->willReturnOnConsecutiveCalls($foreignKey1, $foreignKey2);
+
+        $foreignKeyOld1 = $this->getForeignKey('fk');
+        $foreignKeyOld1->setColumns(['b']);
+        $foreignKeyOld2 = $this->getForeignKey('fk2');
+        $foreignKeyOld2->setReferredColumns(['b']);
+        $this->oldStructure->method('getForeignKeys')->willReturn(
+            [
+                'fk' => $foreignKeyOld1,
+                'fk2' => $foreignKeyOld2,
+            ]
+        );
+        $this->oldStructure->method('getForeignKey')->willReturnOnConsecutiveCalls($foreignKeyOld1, $foreignKeyOld2);
+
+        $this->compare();
+    }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
     public function shouldDropForeignKey(): void
     {
         $this->expectException(NotSupportedException::class);

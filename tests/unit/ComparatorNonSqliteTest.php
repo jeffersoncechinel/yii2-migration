@@ -697,6 +697,48 @@ class ComparatorNonSqliteTest extends TestCase
      * @test
      * @throws NotSupportedException
      */
+    public function shouldAddDiffColumnsAndDiffRefColumnsForeignKey(): void
+    {
+        $foreignKey1 = $this->getForeignKey('fk');
+        $foreignKey1->setColumns(['a']);
+        $foreignKey2 = $this->getForeignKey('fk2');
+        $foreignKey2->setReferredColumns(['a']);
+        $this->newStructure->method('getForeignKeys')->willReturn(
+            [
+                'fk' => $foreignKey1,
+                'fk2' => $foreignKey2
+            ]
+        );
+        $this->newStructure->method('getForeignKey')->willReturnOnConsecutiveCalls($foreignKey1, $foreignKey2);
+
+        $foreignKeyOld1 = $this->getForeignKey('fk');
+        $foreignKeyOld1->setColumns(['b']);
+        $foreignKeyOld2 = $this->getForeignKey('fk2');
+        $foreignKeyOld2->setReferredColumns(['b']);
+        $this->oldStructure->method('getForeignKeys')->willReturn(
+            [
+                'fk' => $foreignKeyOld1,
+                'fk2' => $foreignKeyOld2,
+            ]
+        );
+        $this->oldStructure->method('getForeignKey')->willReturnOnConsecutiveCalls($foreignKeyOld1, $foreignKeyOld2);
+
+        $this->compare();
+
+        $this->assertTrue($this->blueprint->isPending());
+        $this->assertSame(
+            [
+                "different foreign key 'fk' columns (DB: [\"a\"] != MIG: [\"b\"])",
+                "different foreign key 'fk2' referred columns (DB: [\"a\"] != MIG: [\"b\"])"
+            ],
+            $this->blueprint->getDescriptions()
+        );
+    }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
     public function shouldDropForeignKey(): void
     {
         $foreignKey = $this->getForeignKey('fk');
