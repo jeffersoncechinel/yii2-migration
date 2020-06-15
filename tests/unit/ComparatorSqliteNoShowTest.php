@@ -324,6 +324,33 @@ final class ComparatorSqliteNoShowTest extends ComparatorNonSqliteTest
      * @test
      * @throws NotSupportedException
      */
+    public function shouldAddNewAndModifiedForeignKey(): void
+    {
+        $this->expectException(NotSupportedException::class);
+
+        $foreignKey1 = $this->getForeignKey('fk');
+        $foreignKey2 = $this->getForeignKey('fk2');
+        $foreignKey2->setColumns(['a']);
+        $this->newStructure->method('getForeignKeys')->willReturn(
+            [
+                'fk' => $foreignKey1,
+                'fk2' => $foreignKey2
+            ]
+        );
+        $this->newStructure->method('getForeignKey')->willReturn($foreignKey2);
+
+        $foreignKeyOld = $this->getForeignKey('fk2');
+        $foreignKeyOld->setColumns(['b']);
+        $this->oldStructure->method('getForeignKeys')->willReturn(['fk2' => $foreignKeyOld]);
+        $this->oldStructure->method('getForeignKey')->willReturn($foreignKeyOld);
+
+        $this->compare();
+    }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
     public function shouldDropForeignKey(): void
     {
         $this->expectException(NotSupportedException::class);

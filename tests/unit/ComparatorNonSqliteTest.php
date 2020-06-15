@@ -663,6 +663,40 @@ class ComparatorNonSqliteTest extends TestCase
      * @test
      * @throws NotSupportedException
      */
+    public function shouldAddNewAndModifiedForeignKey(): void
+    {
+        $foreignKey1 = $this->getForeignKey('fk');
+        $foreignKey2 = $this->getForeignKey('fk2');
+        $foreignKey2->setColumns(['a']);
+        $this->newStructure->method('getForeignKeys')->willReturn(
+            [
+                'fk' => $foreignKey1,
+                'fk2' => $foreignKey2
+            ]
+        );
+        $this->newStructure->method('getForeignKey')->willReturn($foreignKey2);
+
+        $foreignKeyOld = $this->getForeignKey('fk2');
+        $foreignKeyOld->setColumns(['b']);
+        $this->oldStructure->method('getForeignKeys')->willReturn(['fk2' => $foreignKeyOld]);
+        $this->oldStructure->method('getForeignKey')->willReturn($foreignKeyOld);
+
+        $this->compare();
+
+        $this->assertTrue($this->blueprint->isPending());
+        $this->assertSame(
+            [
+                "missing foreign key 'fk'",
+                "different foreign key 'fk2' columns (DB: [\"a\"] != MIG: [\"b\"])"
+            ],
+            $this->blueprint->getDescriptions()
+        );
+    }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
     public function shouldDropForeignKey(): void
     {
         $foreignKey = $this->getForeignKey('fk');
@@ -954,6 +988,41 @@ class ComparatorNonSqliteTest extends TestCase
             $this->blueprint->getDescriptions()
         );
         $this->assertSame(['idx'], array_keys($this->blueprint->getAddedIndexes()));
+    }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
+    public function shouldAddNewAndModifiedIndex(): void
+    {
+        $newIndex1 = $this->getIndex('idx');
+        $newIndex1->setColumns(['a']);
+        $newIndex2 = $this->getIndex('idx2');
+        $newIndex2->setColumns(['b']);
+        $this->newStructure->method('getIndexes')->willReturn(
+            [
+                'idx' => $newIndex1,
+                'idx2' => $newIndex2,
+            ]
+        );
+        $this->newStructure->method('getIndex')->willReturn($newIndex2);
+
+        $oldIndex = $this->getIndex('idx2');
+        $oldIndex->setColumns(['a']);
+        $this->oldStructure->method('getIndexes')->willReturn(['idx2' => $oldIndex]);
+        $this->oldStructure->method('getIndex')->willReturn($oldIndex);
+
+        $this->compare();
+
+        $this->assertTrue($this->blueprint->isPending());
+        $this->assertSame(
+            [
+                "missing index 'idx'",
+                "different index 'idx2' columns (DB: [\"b\"]) != MIG: ([\"a\"]))"
+            ],
+            $this->blueprint->getDescriptions()
+        );
     }
 
     /**

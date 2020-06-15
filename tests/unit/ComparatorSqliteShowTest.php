@@ -457,6 +457,42 @@ final class ComparatorSqliteShowTest extends ComparatorNonSqliteTest
      * @test
      * @throws NotSupportedException
      */
+    public function shouldAddNewAndModifiedForeignKey(): void
+    {
+        $foreignKey1 = $this->getForeignKey('fk');
+        $foreignKey2 = $this->getForeignKey('fk2');
+        $foreignKey2->setColumns(['a']);
+        $this->newStructure->method('getForeignKeys')->willReturn(
+            [
+                'fk' => $foreignKey1,
+                'fk2' => $foreignKey2
+            ]
+        );
+        $this->newStructure->method('getForeignKey')->willReturn($foreignKey2);
+
+        $foreignKeyOld = $this->getForeignKey('fk2');
+        $foreignKeyOld->setColumns(['b']);
+        $this->oldStructure->method('getForeignKeys')->willReturn(['fk2' => $foreignKeyOld]);
+        $this->oldStructure->method('getForeignKey')->willReturn($foreignKeyOld);
+
+        $this->compare();
+
+        $this->assertTrue($this->blueprint->isPending());
+        $this->assertSame(
+            [
+                "missing foreign key 'fk'",
+                '(!) ADD FOREIGN KEY is not supported by SQLite: Migration must be created manually',
+                "different foreign key 'fk2' columns (DB: [\"a\"] != MIG: [\"b\"])",
+                '(!) DROP/ADD FOREIGN KEY is not supported by SQLite: Migration must be created manually'
+            ],
+            $this->blueprint->getDescriptions()
+        );
+    }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
     public function shouldDropForeignKey(): void
     {
         $foreignKey = $this->getForeignKey('fk');
