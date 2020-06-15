@@ -667,4 +667,42 @@ final class ComparatorSqliteShowTest extends ComparatorNonSqliteTest
         $this->assertNull($this->blueprint->getTableOldPrimaryKey());
         $this->assertNull($this->blueprint->getAddedPrimaryKey());
     }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
+    public function shouldAlterColumnForDifferentCommentButSameAppendAndUnique(): void
+    {
+        $columnOld = $this->getColumn('col');
+        $columnOld->setAutoIncrement(true);
+        $columnOld->setUnique(true);
+        $columnOld->setComment('a');
+        $columnNew = $this->getColumn('col');
+        $columnNew->setAppend('AUTOINCREMENT');
+        $columnNew->setUnique(false);
+        $columnNew->setComment('b');
+        $this->newStructure->method('getColumns')->willReturn(['col' => $columnNew]);
+        $this->newStructure->method('getColumn')->willReturn($columnNew);
+        $this->oldStructure->method('getColumns')->willReturn(['col' => $columnOld]);
+        $this->oldStructure->method('getColumn')->willReturn($columnOld);
+        $index = $this->getIndex('idx');
+        $index->setUnique(true);
+        $index->setColumns(['col']);
+        $this->oldStructure->method('getIndexes')->willReturn(['idx' => $index]);
+        $this->oldStructure->method('getIndex')->willReturn($index);
+        $this->newStructure->method('getIndexes')->willReturn(['idx' => $index]);
+        $this->newStructure->method('getIndex')->willReturn($index);
+
+        $this->compare();
+
+        $this->assertTrue($this->blueprint->isPending());
+        $this->assertSame(
+            [
+                "different 'col' column property: comment (DB: \"b\" != MIG: \"a\")",
+                '(!) ALTER COLUMN is not supported by SQLite: Migration must be created manually'
+            ],
+            $this->blueprint->getDescriptions()
+        );
+    }
 }

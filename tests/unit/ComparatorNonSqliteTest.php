@@ -212,6 +212,46 @@ class ComparatorNonSqliteTest extends TestCase
      * @test
      * @throws NotSupportedException
      */
+    public function shouldNotAlterColumnForGetLengthDifferentBeforeStringCastVariant1(): void
+    {
+        $columnNew = $this->getColumn('col');
+        $columnNew->setLength(8);
+        $columnOld = $this->getColumn('col');
+        $columnOld->setLength('8');
+        $this->newStructure->method('getColumns')->willReturn(['col' => $columnNew]);
+        $this->newStructure->method('getColumn')->willReturn($columnNew);
+        $this->oldStructure->method('getColumns')->willReturn(['col' => $columnOld]);
+        $this->oldStructure->method('getColumn')->willReturn($columnOld);
+
+        $this->compare();
+
+        $this->assertFalse($this->blueprint->isPending());
+    }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
+    public function shouldNotAlterColumnForGetLengthDifferentBeforeStringCastVariant2(): void
+    {
+        $columnNew = $this->getColumn('col');
+        $columnNew->setLength('8');
+        $columnOld = $this->getColumn('col');
+        $columnOld->setLength(8);
+        $this->newStructure->method('getColumns')->willReturn(['col' => $columnNew]);
+        $this->newStructure->method('getColumn')->willReturn($columnNew);
+        $this->oldStructure->method('getColumns')->willReturn(['col' => $columnOld]);
+        $this->oldStructure->method('getColumn')->willReturn($columnOld);
+
+        $this->compare();
+
+        $this->assertFalse($this->blueprint->isPending());
+    }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
     public function shouldAlterColumnForIsUnique(): void
     {
         $columnNew = $this->getColumn('col');
@@ -1012,5 +1052,40 @@ class ComparatorNonSqliteTest extends TestCase
         );
         $this->assertSame(['idx'], array_keys($this->blueprint->getAddedIndexes()));
         $this->assertSame(['idx'], array_keys($this->blueprint->getDroppedIndexes()));
+    }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
+    public function shouldAlterColumnForDifferentCommentButSameAppendAndUnique(): void
+    {
+        $columnOld = $this->getColumn('col');
+        $columnOld->setAutoIncrement(true);
+        $columnOld->setUnique(true);
+        $columnOld->setComment('a');
+        $columnNew = $this->getColumn('col');
+        $columnNew->setAppend('AUTOINCREMENT');
+        $columnNew->setUnique(false);
+        $columnNew->setComment('b');
+        $this->newStructure->method('getColumns')->willReturn(['col' => $columnNew]);
+        $this->newStructure->method('getColumn')->willReturn($columnNew);
+        $this->oldStructure->method('getColumns')->willReturn(['col' => $columnOld]);
+        $this->oldStructure->method('getColumn')->willReturn($columnOld);
+        $index = $this->getIndex('idx');
+        $index->setUnique(true);
+        $index->setColumns(['col']);
+        $this->oldStructure->method('getIndexes')->willReturn(['idx' => $index]);
+        $this->oldStructure->method('getIndex')->willReturn($index);
+        $this->newStructure->method('getIndexes')->willReturn(['idx' => $index]);
+        $this->newStructure->method('getIndex')->willReturn($index);
+
+        $this->compare();
+
+        $this->assertTrue($this->blueprint->isPending());
+        $this->assertSame(
+            ["different 'col' column property: comment (DB: \"b\" != MIG: \"a\")"],
+            $this->blueprint->getDescriptions()
+        );
     }
 }

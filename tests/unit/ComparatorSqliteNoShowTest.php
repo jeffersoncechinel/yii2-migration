@@ -515,4 +515,35 @@ final class ComparatorSqliteNoShowTest extends ComparatorNonSqliteTest
 
         $this->compare();
     }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
+    public function shouldAlterColumnForDifferentCommentButSameAppendAndUnique(): void
+    {
+        $this->expectException(NotSupportedException::class);
+
+        $columnOld = $this->getColumn('col');
+        $columnOld->setAutoIncrement(true);
+        $columnOld->setUnique(true);
+        $columnOld->setComment('a');
+        $columnNew = $this->getColumn('col');
+        $columnNew->setAppend('AUTOINCREMENT');
+        $columnNew->setUnique(false);
+        $columnNew->setComment('b');
+        $this->newStructure->method('getColumns')->willReturn(['col' => $columnNew]);
+        $this->newStructure->method('getColumn')->willReturn($columnNew);
+        $this->oldStructure->method('getColumns')->willReturn(['col' => $columnOld]);
+        $this->oldStructure->method('getColumn')->willReturn($columnOld);
+        $index = $this->getIndex('idx');
+        $index->setUnique(true);
+        $index->setColumns(['col']);
+        $this->oldStructure->method('getIndexes')->willReturn(['idx' => $index]);
+        $this->oldStructure->method('getIndex')->willReturn($index);
+        $this->newStructure->method('getIndexes')->willReturn(['idx' => $index]);
+        $this->newStructure->method('getIndex')->willReturn($index);
+
+        $this->compare();
+    }
 }
