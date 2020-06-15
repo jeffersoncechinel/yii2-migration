@@ -107,54 +107,75 @@ final class Comparator implements ComparatorInterface
 
             $previousColumn = $name;
             foreach (
-                [
-                    'getType' => 'type',
-                    'isNotNull' => 'not null',
-                    'getLength' => 'length',
-                    'isUnique' => 'unique',
-                    'isUnsigned' => 'unsigned',
-                    'getDefault' => 'default',
-                    'getAppend' => 'append',
-                    'getComment' => 'comment',
-                ] as $propertyFetch => $propertyName
+                ['type', 'not null', 'length', 'unique', 'unsigned', 'default', 'append', 'comment'] as $property
             ) {
                 /** @var ColumnInterface $oldColumn */
                 $oldColumn = $oldStructure->getColumn($name);
-                if ($propertyFetch === 'getLength') {
-                    $oldProperty = $oldColumn->getLength($schema, $engineVersion);
-                    $newProperty = $column->getLength($schema, $engineVersion);
-                } else {
-                    $oldProperty = $oldColumn->$propertyFetch();
-                    $newProperty = $column->$propertyFetch();
+                $oldValue = $newValue = null;
+
+                switch ($property) {
+                    case 'type':
+                        $oldValue = $oldColumn->getType();
+                        $newValue = $column->getType();
+                        break;
+                    case 'not null':
+                        $oldValue = $oldColumn->isNotNull();
+                        $newValue = $column->isNotNull();
+                        break;
+                    case 'length':
+                        $oldValue = $oldColumn->getLength($schema, $engineVersion);
+                        $newValue = $column->getLength($schema, $engineVersion);
+                        break;
+                    case 'unique':
+                        $oldValue = $oldColumn->isUnique();
+                        $newValue = $column->isUnique();
+                        break;
+                    case 'unsigned':
+                        $oldValue = $oldColumn->isUnsigned();
+                        $newValue = $column->isUnsigned();
+                        break;
+                    case 'default':
+                        $oldValue = $oldColumn->getDefault();
+                        $newValue = $column->getDefault();
+                        break;
+                    case 'append':
+                        $oldValue = $oldColumn->getAppend();
+                        $newValue = $column->getAppend();
+                        break;
+                    case 'comment':
+                        $oldValue = $oldColumn->getComment();
+                        $newValue = $column->getComment();
+                        break;
                 }
-                if (is_bool($oldProperty) === false && $oldProperty !== null && is_array($oldProperty) === false) {
-                    $oldProperty = (string)$oldProperty;
+
+                if (is_bool($oldValue) === false && $oldValue !== null && is_array($oldValue) === false) {
+                    $oldValue = (string)$oldValue;
                 }
-                if (is_bool($newProperty) === false && $newProperty !== null && is_array($newProperty) === false) {
-                    $newProperty = (string)$newProperty;
+                if (is_bool($newValue) === false && $newValue !== null && is_array($newValue) === false) {
+                    $newValue = (string)$newValue;
                 }
-                if ($oldProperty !== $newProperty) {
-                    if ($propertyFetch === 'getAppend' && $this->isAppendSame($column, $oldColumn)) {
+                if ($oldValue !== $newValue) {
+                    if ($property === 'append' && $this->isAppendSame($column, $oldColumn)) {
                         continue;
                     }
 
                     if (
-                        $propertyFetch === 'isUnique'
+                        $property === 'unique'
                         && $this->isUniqueSameWithIndexes(
                             $newStructure,
                             $oldStructure,
                             $name,
-                            (bool)$newProperty,
-                            (bool)$oldProperty
+                            $column->isUnique(),
+                            $oldColumn->isUnique()
                         )
                     ) {
                         continue;
                     }
 
                     $blueprint->addDescription(
-                        "different '$name' column property: $propertyName ("
-                        . 'DB: ' . $this->stringifyValue($newProperty) . ' != '
-                        . 'MIG: ' . $this->stringifyValue($oldProperty) . ')'
+                        "different '$name' column property: $property ("
+                        . 'DB: ' . $this->stringifyValue($newValue) . ' != '
+                        . 'MIG: ' . $this->stringifyValue($oldValue) . ')'
                     );
 
                     if ($schema === Schema::SQLITE) {
