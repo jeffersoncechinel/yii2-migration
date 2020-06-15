@@ -26,9 +26,10 @@
     "yiisoft/yii2": "^2.0.19"
   },
   "require-dev": {
+    "infection/infection": "*",
     "phpunit/phpunit": "^8.5",
-    "roave/security-advisories": "dev-master",
-    "phpstan/phpstan": "*"
+    "phpstan/phpstan": "*",
+    "roave/security-advisories": "dev-master"
   },
   "autoload": {
     "psr-4": {

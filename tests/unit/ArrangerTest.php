@@ -42,6 +42,7 @@ final class ArrangerTest extends TestCase
                 ['C', 'B', 'A'],
                 ['A', 'B'],
             ],
+            'case 9' => [['A' => ['B', 'B'], 'B' => ['A']], ['B', 'A'], ['A']],
         ];
     }
 

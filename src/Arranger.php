@@ -110,8 +110,9 @@ final class Arranger implements ArrangerInterface
         $checkList = [];
 
         $inputCount = count($input);
+        $guard = 0;
 
-        while ($inputCount > count($order)) {
+        while ($inputCount > count($order) && $guard++ <= $inputCount) {
             $done = false;
             $lastCheckedName = $lastCheckedDependency = null;
 
@@ -151,7 +152,7 @@ final class Arranger implements ArrangerInterface
                 $filteredDependencies = [];
                 /** @var string $name */
                 foreach ($postLinkMerged as $name => $dependencies) {
-                    $filteredDependencies[$name] = array_unique($dependencies);
+                    $filteredDependencies[$name] = $dependencies;
                 }
                 $this->referencesToPostpone = $filteredDependencies;
             }
