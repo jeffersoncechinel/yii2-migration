@@ -647,7 +647,7 @@ final class ComparatorSqliteShowTest extends ComparatorNonSqliteTest
      * @test
      * @throws NotSupportedException
      */
-    public function shouldReplaceForeignKeyWithDifferentReferredColumns(): void
+    public function shouldReplaceForeignKeyWithDifferentReferredColumnsVariant1(): void
     {
         $foreignKeyNew = $this->getForeignKey('fk');
         $foreignKeyNew->setReferredColumns(['a', 'b']);
@@ -664,6 +664,64 @@ final class ComparatorSqliteShowTest extends ComparatorNonSqliteTest
         $this->assertSame(
             [
                 "different foreign key 'fk' referred columns (DB: [\"a\",\"b\"] != MIG: [\"c\",\"b\"])",
+                '(!) DROP/ADD FOREIGN KEY is not supported by SQLite: Migration must be created manually'
+            ],
+            $this->blueprint->getDescriptions()
+        );
+        $this->assertSame(['fk'], array_keys($this->blueprint->getAddedForeignKeys()));
+        $this->assertSame(['fk'], array_keys($this->blueprint->getDroppedForeignKeys()));
+    }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
+    public function shouldReplaceForeignKeyWithDifferentReferredColumnsVariant2(): void
+    {
+        $foreignKeyNew = $this->getForeignKey('fk');
+        $foreignKeyNew->setReferredColumns(['a']);
+        $foreignKeyOld = $this->getForeignKey('fk');
+        $foreignKeyOld->setReferredColumns(['a', 'b']);
+        $this->newStructure->method('getForeignKeys')->willReturn(['fk' => $foreignKeyNew]);
+        $this->newStructure->method('getForeignKey')->willReturn($foreignKeyNew);
+        $this->oldStructure->method('getForeignKeys')->willReturn(['fk' => $foreignKeyOld]);
+        $this->oldStructure->method('getForeignKey')->willReturn($foreignKeyOld);
+
+        $this->compare();
+
+        $this->assertTrue($this->blueprint->isPending());
+        $this->assertSame(
+            [
+                "different foreign key 'fk' referred columns (DB: [\"a\"] != MIG: [\"a\",\"b\"])",
+                '(!) DROP/ADD FOREIGN KEY is not supported by SQLite: Migration must be created manually'
+            ],
+            $this->blueprint->getDescriptions()
+        );
+        $this->assertSame(['fk'], array_keys($this->blueprint->getAddedForeignKeys()));
+        $this->assertSame(['fk'], array_keys($this->blueprint->getDroppedForeignKeys()));
+    }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
+    public function shouldReplaceForeignKeyWithDifferentReferredColumnsVariant3(): void
+    {
+        $foreignKeyNew = $this->getForeignKey('fk');
+        $foreignKeyNew->setReferredColumns(['a', 'b']);
+        $foreignKeyOld = $this->getForeignKey('fk');
+        $foreignKeyOld->setReferredColumns(['a']);
+        $this->newStructure->method('getForeignKeys')->willReturn(['fk' => $foreignKeyNew]);
+        $this->newStructure->method('getForeignKey')->willReturn($foreignKeyNew);
+        $this->oldStructure->method('getForeignKeys')->willReturn(['fk' => $foreignKeyOld]);
+        $this->oldStructure->method('getForeignKey')->willReturn($foreignKeyOld);
+
+        $this->compare();
+
+        $this->assertTrue($this->blueprint->isPending());
+        $this->assertSame(
+            [
+                "different foreign key 'fk' referred columns (DB: [\"a\",\"b\"] != MIG: [\"a\"])",
                 '(!) DROP/ADD FOREIGN KEY is not supported by SQLite: Migration must be created manually'
             ],
             $this->blueprint->getDescriptions()

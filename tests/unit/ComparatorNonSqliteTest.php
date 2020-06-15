@@ -837,7 +837,7 @@ class ComparatorNonSqliteTest extends TestCase
      * @test
      * @throws NotSupportedException
      */
-    public function shouldReplaceForeignKeyWithDifferentReferredColumns(): void
+    public function shouldReplaceForeignKeyWithDifferentReferredColumnsVariant1(): void
     {
         $foreignKeyNew = $this->getForeignKey('fk');
         $foreignKeyNew->setReferredColumns(['a', 'b']);
@@ -853,6 +853,58 @@ class ComparatorNonSqliteTest extends TestCase
         $this->assertTrue($this->blueprint->isPending());
         $this->assertSame(
             ["different foreign key 'fk' referred columns (DB: [\"a\",\"b\"] != MIG: [\"c\",\"b\"])"],
+            $this->blueprint->getDescriptions()
+        );
+        $this->assertSame(['fk'], array_keys($this->blueprint->getAddedForeignKeys()));
+        $this->assertSame(['fk'], array_keys($this->blueprint->getDroppedForeignKeys()));
+    }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
+    public function shouldReplaceForeignKeyWithDifferentReferredColumnsVariant2(): void
+    {
+        $foreignKeyNew = $this->getForeignKey('fk');
+        $foreignKeyNew->setReferredColumns(['a']);
+        $foreignKeyOld = $this->getForeignKey('fk');
+        $foreignKeyOld->setReferredColumns(['a', 'b']);
+        $this->newStructure->method('getForeignKeys')->willReturn(['fk' => $foreignKeyNew]);
+        $this->newStructure->method('getForeignKey')->willReturn($foreignKeyNew);
+        $this->oldStructure->method('getForeignKeys')->willReturn(['fk' => $foreignKeyOld]);
+        $this->oldStructure->method('getForeignKey')->willReturn($foreignKeyOld);
+
+        $this->compare();
+
+        $this->assertTrue($this->blueprint->isPending());
+        $this->assertSame(
+            ["different foreign key 'fk' referred columns (DB: [\"a\"] != MIG: [\"a\",\"b\"])"],
+            $this->blueprint->getDescriptions()
+        );
+        $this->assertSame(['fk'], array_keys($this->blueprint->getAddedForeignKeys()));
+        $this->assertSame(['fk'], array_keys($this->blueprint->getDroppedForeignKeys()));
+    }
+
+    /**
+     * @test
+     * @throws NotSupportedException
+     */
+    public function shouldReplaceForeignKeyWithDifferentReferredColumnsVariant3(): void
+    {
+        $foreignKeyNew = $this->getForeignKey('fk');
+        $foreignKeyNew->setReferredColumns(['a', 'b']);
+        $foreignKeyOld = $this->getForeignKey('fk');
+        $foreignKeyOld->setReferredColumns(['a']);
+        $this->newStructure->method('getForeignKeys')->willReturn(['fk' => $foreignKeyNew]);
+        $this->newStructure->method('getForeignKey')->willReturn($foreignKeyNew);
+        $this->oldStructure->method('getForeignKeys')->willReturn(['fk' => $foreignKeyOld]);
+        $this->oldStructure->method('getForeignKey')->willReturn($foreignKeyOld);
+
+        $this->compare();
+
+        $this->assertTrue($this->blueprint->isPending());
+        $this->assertSame(
+            ["different foreign key 'fk' referred columns (DB: [\"a\",\"b\"] != MIG: [\"a\"])"],
             $this->blueprint->getDescriptions()
         );
         $this->assertSame(['fk'], array_keys($this->blueprint->getAddedForeignKeys()));
