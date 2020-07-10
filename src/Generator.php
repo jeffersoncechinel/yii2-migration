@@ -99,6 +99,12 @@ class Generator extends Component
     public $tableOptions;
 
     /**
+     * @var string|null
+     * @since 3.6.5
+     */
+    public $addTableRows;
+
+    /**
      * @var array
      * @since 3.4.0
      */
@@ -308,12 +314,26 @@ class Generator extends Component
                 'indexes' => $indexes,
                 'tableOptionsInit' => $this->tableOptionsInit,
                 'tableOptions' => $this->tableOptions,
+                'tableRows' => $this->getRows()
             ]);
 
             $this->_table->columns = $this->getTableColumns($indexes, $this->_table->schema);
         }
 
         return $this->_table;
+    }
+
+    /**
+     * Returns all table rows if addTableRows is true
+     * @return array
+     */
+    public function getRows(): array
+    {
+        if ($this->addTableRows) {
+            return $this->db->createCommand('select * from ' . $this->tableName)->queryAll();
+        }
+
+        return [];
     }
 
     /**

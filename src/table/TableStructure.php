@@ -79,6 +79,11 @@ class TableStructure extends BaseObject
      */
     public $tableOptions;
 
+    /**
+     * @var array
+     * @since 3.6.5
+     */
+    public $tableRows;
 
     protected $_schema;
 
@@ -182,6 +187,19 @@ class TableStructure extends BaseObject
             '        ]%s);',
             $this->tableOptions !== null ? ", {$this->tableOptions}" : ''
         ) . "\n";
+
+        // content adding
+        $output .= "\n";
+        $arr = null;
+        foreach ($this->tableRows as $item) {
+            $arr .= sprintf('        $this->insert(\'%s\', [', $this->name ) . "\n";
+            foreach ($item as $key => $value) {
+                $arr .= sprintf("            '%s' => \"%s\",\n", $key, $value);
+            }
+            $arr .= '        ]);' . "\n";
+        }
+
+        $output .= $arr;
 
         return $output;
     }

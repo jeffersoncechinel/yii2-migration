@@ -161,6 +161,12 @@ class MigrationController extends Controller
     public $excludeTables = [];
 
     /**
+     * @var Flag to add insert statements of the table content.
+     * @since 3.6.5
+     */
+    public $addTableRows = false;
+
+    /**
      * @var string Template file for generating new foreign keys migrations.
      * This can be either a path alias (e.g. "@app/migrations/template.php") or a file path.
      * @since 3.4.0
@@ -185,6 +191,7 @@ class MigrationController extends Controller
             'tableOptionsInit',
             'tableOptions',
             'templateFileForeignKey',
+            'addTableRows'
         ];
         $updateOptions = [
             'showOnly',
@@ -248,6 +255,7 @@ class MigrationController extends Controller
             'O' => 'tableOptionsInit',
             'o' => 'tableOptions',
             'K' => 'templateFileForeignKey',
+            'c' => 'addTableRows'
         ]);
     }
 
@@ -258,7 +266,7 @@ class MigrationController extends Controller
     {
         parent::init();
 
-        foreach (['useTablePrefix', 'showOnly', 'generalSchema', 'fixHistory'] as $property) {
+        foreach (['useTablePrefix', 'showOnly', 'generalSchema', 'fixHistory', 'addTableRows'] as $property) {
             if ($this->$property !== true) {
                 if ($this->$property === 'true' || $this->$property === 1) {
                     $this->$property = true;
@@ -419,7 +427,7 @@ class MigrationController extends Controller
         $cmd = $this->ansiFormat('migration/create', Console::FG_CYAN);
         $this->stdout("   $cmd $tab\n");
 
-        $this->stdout("      to generate creating migration for the specific table.\n", Console::FG_GREEN);
+        $this->stdout("      to generate creating migration for the specific table. (-c to add table rows contents)\n", Console::FG_GREEN);
 
         $cmd = $this->ansiFormat('migration/create-all', Console::FG_CYAN);
         $this->stdout("   $cmd\n");
@@ -519,6 +527,7 @@ class MigrationController extends Controller
                 'tableOptionsInit' => $this->tableOptionsInit,
                 'tableOptions' => $this->tableOptions,
                 'suppressForeignKey' => $suppressForeignKeys[$name] ?? [],
+                'addTableRows' => $this->addTableRows
             ]);
 
             if ($generator->tableSchema === null) {
